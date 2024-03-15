@@ -7,15 +7,20 @@ backgroundColor: #fff
 backgroundImage: url('https://marp.app/assets/hero-background.svg')
 ---
 
-![bg left:40% 80%](https://datasturgeon.com/assets/logoname.svg)
 
 # **Dancing Queen**
+![](https://datasturgeon.com/assets/logoname.svg)
 
+![bg right 90%](qr.svg)
+
+
+<!--
 Explore the dancing behavior in Dung Beetles with the aid of AprilTags
+-->
 
 ---
 
- <video loop autoplay width="100%" src="https://dl.dropboxusercontent.com/scl/fi/kimt2tfhcl57xr5dy3ew2/dance.mp4?rlkey=l1aad2ic6yk9uruqejopcvg8s&dl=0"> </video> 
+ <video muted loop autoplay width="100%" src="https://dl.dropboxusercontent.com/scl/fi/kimt2tfhcl57xr5dy3ew2/dance.mp4?rlkey=l1aad2ic6yk9uruqejopcvg8s&dl=0"> </video> 
 
 <!--
 - Dung Beetles exhibit a dancing behavior
@@ -49,11 +54,12 @@ one to one, static sun, reverse, etc...
 
 ---
 
-![bg left:40% 80%](https://april.eecs.umich.edu/media/apriltag/tagformats_web.png)
+![bg left:50% 80%](https://april.eecs.umich.edu/media/apriltag/apriltagrobots_overlay.jpg)
+
 
 # AprilTags
 
-AprilTags is a popular form of fiducial tagging. It allows us to quickly detect the location and the orientation of all the tags in an image.
+Fiducial tagging: quickly detect tag's location and orientation in an image.
 
 <!--
 because they were introduced in April 2011
@@ -66,15 +72,13 @@ because they were introduced in April 2011
 
 ![bg contain](https://dl.dropboxusercontent.com/scl/fi/ryn0nhuf4igjwv4pupr2h/closeup.jpg?rlkey=c9o0efvxhchxqgci6rcwmd483&dl=0)
 
----
-
 ![bg contain](https://dl.dropboxusercontent.com/scl/fi/zw36sk642fy16ddl41pw2/with_pi.jpg?rlkey=8r5w39x86uel5ow81ltaelvm5&dl=0)
 
 ---
 
 # Challenges
 
-- Functions in IR
+- Work in Infra Red
 - Closed-loop system 
 - Iteration time < camera FPS 
 - Control must not interfere with the main loop
@@ -88,21 +92,28 @@ The animal has a closed loop system in regards to its body and environment. We a
 # Solutions
 
 - NoIR Raspberry Pi camera
-- Dedicated RPI just for the main loop
-- Secondary RPI/computer for the GUI and control via a webserver
+- Dedicated RPI just for the main loop: Server
+- Secondary RPI/computer for the GUI and control: Client
+- Post analysis with a dedicated tool
 
 ---
 
-<video loop autoplay width="100%" src="https://dl.dropboxusercontent.com/scl/fi/4ipbtrzi92yz32zxuk841/with_beetle.mp4?rlkey=hzzkqpybmpqirqm75gz5881nv&dl=0"> </video>
+<video muted loop autoplay width="100%" src="https://dl.dropboxusercontent.com/scl/fi/4ipbtrzi92yz32zxuk841/with_beetle.mp4?rlkey=hzzkqpybmpqirqm75gz5881nv&dl=0"> </video>
 
 ---
 
-<video loop autoplay height="100%" src="https://dl.dropboxusercontent.com/scl/fi/uw4khpob0zwk5b6q9elaa/client.webm?rlkey=cghk96zeye02q09z572who3cv&dl=0" style="float:left"> </video>
-<video loop autoplay height="100%" src="https://dl.dropboxusercontent.com/scl/fi/7glvc16y76yheu2tmnay6/client2.webm?rlkey=f2wv8udcn3miaz8a4mca97ylt&dl=0" style="float:right"> </video>
+### Client
+<div>
+<video muted loop autoplay height="100%" src="https://dl.dropboxusercontent.com/scl/fi/uw4khpob0zwk5b6q9elaa/client.webm?rlkey=cghk96zeye02q09z572who3cv&dl=0" style="float:left"> </video>
+
+<video muted loop autoplay height="100%" src="https://dl.dropboxusercontent.com/scl/fi/7glvc16y76yheu2tmnay6/client2.webm?rlkey=f2wv8udcn3miaz8a4mca97ylt&dl=0" style="float:right"> </video>
+</div>
 
 ---
 
-<video loop autoplay width="30%" src="https://dl.dropboxusercontent.com/scl/fi/0ohv518mhk2kdinlz3qa3/fast.mp4?rlkey=6d72dhcpedh3p4bqk6frh6czi&dl=0" style="float:left; position: relative; left: 35%;"> </video>
+### Server
+
+<video muted loop autoplay width="25%" src="https://dl.dropboxusercontent.com/scl/fi/0ohv518mhk2kdinlz3qa3/fast.mp4?rlkey=6d72dhcpedh3p4bqk6frh6czi&dl=0"> </video>
 
 ---
 
@@ -110,30 +121,31 @@ The animal has a closed loop system in regards to its body and environment. We a
 
 ---
 
-<video loop autoplay height="100%" src="https://dl.dropboxusercontent.com/scl/fi/55hsd865bxe1juoq6w0z8/analyse.webm?rlkey=dzag17fobfouj2di19td12d42&dl=0"> </video>
+### Analysis
+
+<video muted loop autoplay width="80%" src="https://dl.dropboxusercontent.com/scl/fi/55hsd865bxe1juoq6w0z8/analyse.webm?rlkey=dzag17fobfouj2di19td12d42&dl=0"> </video>
 
 ---
 
 # How does this work?
-## Main loop
-On the server:
-1. Grab a (raw) frame from the camera
+## Server
+1. Grab a frame from the camera
 2. Detect the AprilTag in a small ROI
 3. If not detected: enlarge the ROI 
 4. Send instructions to LED strip (via an arduino)
 
 <!--
-The speed is independent of the image size
+The speed is therefore independent of the image size
 Steps 2 - 4 take ⪅ 5 ms, resulting in 200 FPS
 -->
 
 ---
+
 # How does this work?
-## GUI loop
-On the client:
+## Client
 1. Fetch last known frame, beetle location & orientation, as well as LEDs  
 2. Plot graphics on the image
-3. Log data to file
+3. Log data to file -> used later in analysis
 4. Send change of setup to the server
 <!--
 All communication occurs via a router (Wi-Fi)
