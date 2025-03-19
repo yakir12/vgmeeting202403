@@ -8,217 +8,169 @@ backgroundImage: url('https://marp.app/assets/hero-background.svg')
 ---
 
 
-# **Dancing Queen**
-![](https://datasturgeon.com/assets/logoname.svg)
+# **PawsomeTracker**
 
-![bg right 90%](qr.svg)
+*Automatically tracking an animal in a video*
 
+[https://github.com/yakir12/PawsomeTracker.jl](https://github.com/yakir12/PawsomeTracker.jl)
 
 <!--
-Explore the dancing behavior in Dung Beetles with the aid of AprilTags
-You can scan the QR code here to view the presentation online
+Hi my name is Yakir, I work as a Research Software Engineer at Marie Dacke's lab, but I also work on hardware. Today I'll present an auto tracker I made for the Dacke Lab.  
 -->
 
 ---
 
- <video muted loop autoplay width="100%" src="https://dl.dropboxusercontent.com/scl/fi/kimt2tfhcl57xr5dy3ew2/dance.mp4?rlkey=l1aad2ic6yk9uruqejopcvg8s&dl=0"> </video> 
+ <video muted loop autoplay width="100%" src="media/example.mp4"> </video> 
 
 <!--
-- Dung Beetles exhibit a dancing behavior
-- Visually scan their environment before choosing a trajectory
-- Test the role of the sun in this process  
+- Some behavioral experiments involve recording a video
+- In order to later extract the location of the animal
+- Usually the researcher needs many repetitions / runs for statistics
+- This often results in hundreds of very similar short videos
+- Perfect for automation 
+
+SO HOW WOULD WE AUTODETECT THIS BEETLE?
 -->
 
 ---
 
-# Objectives
-
-*"Connect" the azimuth of the sun to the orientation of the beetle* 
-
-1. Adjust the degree of that connectivity 
-2. Adjust the width, color, and brightness of the sun
-3. Have multiple different suns
+![bg center height:100%](media/ways.jpg)
 
 <!--
-In order to test the role of the sun, we want to "connect" the sun to the beetle
-main and secondary goals
-one to one, static sun, reverse, etc...
+Robust way to detect the target
 -->
 
 ---
 
-# Challenges
+# Difference of Gaussians (DoG)
+- A narrow gaussian minus a wide one
+- An image with details "thicker" than the narrow gaussian minus one with details "thicker" than the wide gaussian
+- All that remains are details between the two spatial frequencies
+- A DoG filter is therefore a spatial band-pass filter
 
-- Work in Infra Red
-- Closed-loop system 
-- Iteration time < camera FPS 
-- Control must not interfere with the main loop
-
-<!--
-The animal has a closed loop system in regards to its body and environment. We are opening that loop in order to fiddle with it.
+<!-- 
+- read the slide and draw on blackboard
+- Surround inhibition is a physiological mechanism to focus neuronal activity in the central nervous system. 
+- This so-called center-surround organization is well-known in sensory systems, where central signals are facilitated and eccentric signals are inhibited in order to sharpen the contrast between them.
 -->
 
 ---
 
-# Solutions
+# Fast 
+- We need only process a neighborhood around the target
+- That region of interest (ROI) follows the target
+- Adapt the size of the ROI to the size of the target
+- Speed is thus independent of the image size!
 
-- NoIR Raspberry Pi camera
-- Dedicated RPI just for the main loop: Server
-- Secondary RPI/computer for the GUI and control: Client
-- asynchronous web communication between the server and client
-- Post analysis with a dedicated tool
-
-<!--
-- Cheap and sturdy hardware that does what we need it to
-- easy to dedicate a single Pi just for the main loop of detecting the beetle and updating the LEDs
-- the monitoring loop for the user is secondary
+<!-- 
+- read the slide and draw on blackboard
 -->
 
 ---
 
-# The setup
+# Process any video
+- Uses `ffmpeg`
+- Works with variable framerate
+- Deals with data/pixel/storage aspect-ratios ≠1
+- Accounts for non-zero start-time
 
-- Flat arena 
-- LED ring centered on the arena
-- Overlooking camera
-- Apriltag mounted on the beetle's back
+<!-- 
+- uses ffmpeg, which is the most complete, cross-platform solution to record, convert, and stream audio and video
+- not all videos have a constant frame rate, and converting them loses (meta-data) information
+- interlaced videos, or non square pixels can create distortions that the tracker needs to be aware of
+- cameras will sometimes segments large video files into smaller ones (e.g FAT), subsequent segments will have a non-zero start time, which the tracker also needs to know of
+-->
+
+---
+# Cross-platform
+- Programmed in a dynamic cross-platform language (need you ask)
+- All the tech underlining this is cross-platform
+
+
+![bg right](media/animated-logo.gif)
+
+---
+
+# Unit Tests and Continuous Integration 
+
+
+[![Build Status](https://github.com/yakir12/PawsomeTracker.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/yakir12/PawsomeTracker.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/yakir12/PawsomeTracker.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/yakir12/PawsomeTracker.jl) [![Aqua](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+
+
+- High coverage (>95%) of unit tests
+- Continuous Integration tested on all combinations of:
+    - all three main architectures (Window, Mac, & Linux)
+    - all major versions of Julie (LTS, prerelease, & nightly) 
+    - single as well as multi-threaded instances
+- Code quality included in the tests
+
+<!-- 
+- Unit tests are simple tests that guarantee that the program does what you think it should. i.e. if you have a function that adds 1 to a number, you can test that when you run fun(2) you get 3.
+- High coverage means that your unit tests cover a large percent of your code base. That is, there are very few things in your program that are not tested for.
+- Continuous integration is a pipeline that automatically runs your tests on every change you want to introduce into the program. This guarantees that the program does exactly what you expect it to on every architecture, version, and instance for every little change you make to the code.
+- Code quality is specific to each language, where one can achieve the same end product via differently "good" ways, and the best way is assured with this additional check.
+-->
+
+---
+# Thread safety
+- Tracking in this program is sequential in nature
+- But you could make the tracking thread-safe 
+- Allowing tracking multiple videos in parallel (CPU goes to 100%) 
+
 
 <!--
-We've built what we call the dancing queen
+- you need to know where the previous location was to detect the next one
+- Safe to run concurrently on multiple threads
+- allows for maximal efficiency
 -->
 
 ---
 
-# AprilTags
+# Arguments
+Everything except the file name has sensible defaults
+- **File name**
+- When in the video to start looking for the target (0 seconds)
+- When in the video to stop looking for the target (24 hours)
+- How wide is the target (25 pixels)
 
-![bg left:50% 80%](https://april.eecs.umich.edu/media/apriltag/apriltagrobots_overlay.jpg)
+---
+
+# Arguments (cont.)
+- Where in the frame to start looking for the target (frame center)
+- How large is the ROI (DoG filter size, depends on target width)
+- Is the target darker or brighter than the background (darker)
+- What frames per second should the video be tracked at (24 FPS)
+- Save an optional diagnosis video (no)
+
+<!-- 
+Use a Difference of Gaussian (DoG) filter to track a target in a video `file`. 
+- `start`: start tracking after `start` seconds. Defaults to 0.
+- `stop`: stop tracking at `stop` seconds.  Defaults to 86399.999 seconds (24 hours minus one millisecond).
+- `target_width`: the full width of the target (diameter, not radius). It is used as the FWHM of the center Gaussian in the DoG filter. Arbitrarily defaults to 25 pixels.
+- `start_location`: one of the following:
+    1. `missing`: the target will be detected in a large (half as large as the frame) window centered at the frame.
+    2. `CartesianIndex{2}`: the Cartesian index (into the image matrix) indicating where the target is at `start`. Note that when the aspect ratio of the video is not equal to one, this Cartesian index should be to the raw, unscaled, image frame.
+    3. `NTuple{2}`: (x, y) where x and y are the horizontal and vertical pixel-distances between the left-top corner of the video-frame and the target at `start`. Note that regardless of the aspect ratio of the video, this coordinate should be to the scaled image frame (what you'd see in a video player).
+    Defaults to `missing`.
+- `window_size`: Defaults to to a good minimal size that depends on the target width (see `fix_window_size` for details). But can be one of the following:
+    1. `NTuple{2}`: a tuple (w, h) where w and h are the width and height of the window (region of interest) in which the algorithm will try to detect the target in the next frame. This should be larger than the `target_width` and relate to how fast the target moves between subsequent frames. 
+    2. `Int`: both the width and height of the window (region of interest) in which the algorithm will try to detect the target in the next frame. This should be larger than the `target_width` and relate to how fast the target moves between subsequent frames. 
+- `darker_target`: set to `true` if the target is darker than its background, and vice versa. Defaults to `true`.
+- `fps`: frames per second. Sets how many times the target's location is registered per second. Set to a low number for faster and sparser tracking, but adjust the `window_size` accordingly. Defaults to an arbitrary value of 24 frames per second.
+- `diagnostic_file`: specify a file path to save a diagnostic video showing a low-memory version of the tracking video with the path of the target superimposed on it. Defaults to nothing.
 
 
-Fiducial tagging: quickly detect tag's location and orientation in an image.
-
-<!--
-- These are tags, just like the QR code you saw in the beginning of this presentation, that together with a image analysis framework, convey their ID, location, and orientation in the image. 
-- They're called APRIL-tags because they were introduced in April 2011
-- ...and, here's a sketch of the main components
+Returns a vector with the time-stamps per frame and a vector of Cartesian indices for the detection index per frame.
 -->
 
 ---
 
-![bg](https://dl.dropboxusercontent.com/scl/fi/tgyjdt4w9jrdp2bum5zwb/overview.jpg?rlkey=07fnd4wsfcxe2n5qtqlwvdqjr&dl=0)
+ <video muted loop autoplay width="100%" src="media/diagnostic_elin.mp4"> </video> 
 
-<!--
-- Here's an overview of the setup. 
-- Ignore the arches
-- You can see the Raspberry Pi at the top, and the camera
-- I placed an Apriltag mounted on a plastic cap just for testing purposes
-- The black cross on the arena is for calibration purposes
-- Every surface on the inside is black 
+---
+
+ <video muted loop autoplay width="100%" src="media/diagnostic_bastien.mp4"> </video> 
+
+<!-- 
+- even in difficult settings
 -->
-
----
-
-![bg contain](https://dl.dropboxusercontent.com/scl/fi/ryn0nhuf4igjwv4pupr2h/closeup.jpg?rlkey=c9o0efvxhchxqgci6rcwmd483&dl=0)
-
-![bg contain](https://dl.dropboxusercontent.com/scl/fi/zw36sk642fy16ddl41pw2/with_pi.jpg?rlkey=8r5w39x86uel5ow81ltaelvm5&dl=0)
-
-<!--
-- You can see the way the camera is mounted, to allow for micro manipulations to adjust it 
--->
-
----
-
-<video muted loop autoplay width="100%" src="https://dl.dropboxusercontent.com/scl/fi/4ipbtrzi92yz32zxuk841/with_beetle.mp4?rlkey=hzzkqpybmpqirqm75gz5881nv&dl=0"> </video>
-
-<!--
-- an overview of the whole thing, wha it looks like with a (half dead) beetle in it 
--->
-
----
-
-### Client
-<div>
-<video muted loop autoplay height="100%" src="https://dl.dropboxusercontent.com/scl/fi/uw4khpob0zwk5b6q9elaa/client.webm?rlkey=cghk96zeye02q09z572who3cv&dl=0" style="float:left"> </video>
-
-<video muted loop autoplay height="100%" src="https://dl.dropboxusercontent.com/scl/fi/7glvc16y76yheu2tmnay6/client2.webm?rlkey=f2wv8udcn3miaz8a4mca97ylt&dl=0" style="float:right"> </video>
-</div>
-
-<!--
-- what it looks like on the user's screen 
-- they can switch between predetermined (determined by the user) setups
-- either with a mouse, or just by a keyboard press
--->
-
----
-
-### Server
-
-<video muted loop autoplay width="25%" src="https://dl.dropboxusercontent.com/scl/fi/0ohv518mhk2kdinlz3qa3/fast.mp4?rlkey=6d72dhcpedh3p4bqk6frh6czi&dl=0"> </video>
-
-<!--
-- I included this just to show that delays, lags, glitches on the client side occur only there. 
-- on the server side, i.e. the loop between the camera and the LED strip is free of that.
--->
-
----
-
-![bg](https://dl.dropboxusercontent.com/scl/fi/m73fwmlg9zof7oobdpxcn/with_beetle.jpg?rlkey=u18q95yr3615d5k4waieqmjyb&dl=0)
-
-<!--
-- I included this, just to show you what the beetle looks like with the tag on its back. 
--->
-
----
-
-### Analysis
-
-<video muted loop autoplay width="80%" src="https://dl.dropboxusercontent.com/scl/fi/55hsd865bxe1juoq6w0z8/analyse.webm?rlkey=dzag17fobfouj2di19td12d42&dl=0"> </video>
-
-<!--
-includes:
-- a way to view their track, including their last `n` seconds
-- they last heading
-- a histogram of their bearing (the angle between their heading and the sun), per sun
-- a track of their turning (accumulated turning relative to the world)
--->
-
----
-
-# How does this work?
-## Server
-1. Grab a frame from the camera
-2. Detect the AprilTag in a **small ROI**
-3. If not detected: enlarge the ROI 
-4. Send instructions to LED strip (via an arduino)
-
-<!--
-The speed is therefore independent of the image size
-Steps 2 - 4 take ⪅ 5 ms, resulting in 200 FPS
--->
-
----
-
-# How does this work?
-## Client
-1. Fetch last known frame, beetle location & orientation, as well as LEDs  
-2. Plot graphics on the image
-3. Log data to file -> used later in analysis
-4. Send change of setup to the server
-<!--
-- All communication occurs via a router (Wi-Fi)
-- any plotting and logging happens outside the main loop
--->
-
----
-
-# Specs
-
-Mode|Resolution|FPS|Brightness|FOV|Max height|Arena width
----|---|---|---|---|---|---
-480|480×480|<font style="color:red;">206</font>|low|19°|70 cm|24 cm
-1232|1232×1232|83|high|48.8°|70 cm|64 cm
-1080|1080×1080|47|high|21.4°|120 cm|45 cm
-2464|<font style="color:red;">2464×2464</font>|21|high|48.8°|120 cm|109 cm
-
----
-
-![bg](https://dl.dropboxusercontent.com/scl/fi/q1bl7deqhe681zuqm95hb/dancingqueen.jpg?rlkey=qqkcdnq5orygejmbtd8478xok&dl=0)
